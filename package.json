@@ -1,0 +1,11 @@
+{
+  "name": "image-checker",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node check-image.js"
+  },
+  "dependencies": {
+    "puppeteer-core": "^20.9.0"
+  }
+}

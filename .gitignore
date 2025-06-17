@@ -1,0 +1,17 @@
+# npm modules
+node_modules/
+
+# logs
+*.log
+
+# dotenv
+.env
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+error.png
+after-login.png
+
+package-lock.json

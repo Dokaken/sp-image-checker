@@ -1,0 +1,86 @@
+name: Light Image Check
+
+on:
+  workflow_dispatch:  # 外部トリガー専用
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 最小限の依存関係のみ追加（30秒程度）
+      - name: Install minimal Chrome deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libdrm2 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libxss1 \
+            libasound2-dev
+
+      - name: Install puppeteer-core only
+        run: npm install puppeteer-core
+
+      - name: Run image checker
+        id: image_check
+        run: |
+          node check-image.js 2>&1 | tee output.log
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        env:
+          LOGIN_ID: ${{ secrets.LOGIN_ID }}
+          LOGIN_PASS: ${{ secrets.LOGIN_PASS }}
+          URL_LOGIN: ${{ secrets.URL_LOGIN }}
+          URL_TARGET: ${{ secrets.URL_TARGET }}
+          TARGET_IMG: ${{secrets.TARGET_IMG}}
+        continue-on-error: true
+
+      - name: Prepare error details
+        if: steps.image_check.outputs.exit_code != '0'
+        id: error_details
+        run: |
+          echo "error_log<<EOF" >> $GITHUB_OUTPUT
+          tail -20 output.log >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack on success
+        if: steps.image_check.outputs.exit_code == '0'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          fields: repo,commit,author,workflow
+          text: "✅ 画像チェックが正常に完了しました"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_SUCCEEDED }}
+
+      - name: Notify Slack on failure
+        if: steps.image_check.outputs.exit_code != '0'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          fields: repo,commit,author,workflow
+          text: |
+            ❌ 画像チェックが失敗しました
+            
+            **エラー詳細:**
+            ```
+            ${{ steps.error_details.outputs.error_log }}
+            ```
+            
+            **リポジトリ:** ${{ github.repository }}
+            **ブランチ:** ${{ github.ref_name }}
+            **コミット:** ${{ github.sha }}
+            **実行者:** ${{ github.actor }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_FAILED }}
