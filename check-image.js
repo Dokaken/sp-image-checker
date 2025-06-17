@@ -100,7 +100,6 @@ const TARGET_IMG = process.env.TARGET_IMG;
 console.log('Target page loaded, checking image...');
 // 特定画像の検査
 const result = await page.evaluate((targetImg) => {
-    console.log(`img[src="${targetImg}"]`);
   const img = document.querySelector(`img[src="${targetImg}"]`);
   if (!img) return { status: 'not found' };
 
