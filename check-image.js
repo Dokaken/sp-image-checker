@@ -64,7 +64,7 @@ const TARGET_IMG = process.env.TARGET_IMG;
     console.log('Browser launched successfully');
     
     const page = await browser.newPage();
-    
+    //aaaaaaaaunti
     // ページタイムアウト設定
     page.setDefaultNavigationTimeout(60000);
     page.setDefaultTimeout(30000);
